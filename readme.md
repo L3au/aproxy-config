@@ -1,10 +1,9 @@
 Mew Proxy
 ===
-基于Chrome扩展的前端静态资源代理工具
+[Aproxy](http://work.cainiao-inc.cn/issues/1440)的配置工具]
 
 安装
 ---
-[下载](https://github.com/L3au/mew-proxy/tree/master/crx)后拖拽到Chrome扩展页面(chrome://extensions/)安装
 
 配置
 ---
