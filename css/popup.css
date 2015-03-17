@@ -10,7 +10,8 @@
 }
 html {
   opacity: 0;
-  transition: transform 0.3s ease-out, opacity 0.1s linear;
+  transition: opacity .2s ease;
+  will-change: opacity;
 }
 .popup-show {
   opacity: 1;
@@ -105,12 +106,14 @@ textarea {
 .options-form .option [class^=fui] {
   display: inline-block;
   width: 20px;
+  margin-bottom: 0;
   font-size: 16px;
   cursor: pointer;
   text-align: center;
   vertical-align: middle;
   opacity: 0.6;
   transition: .25s;
+  line-height: normal;
 }
 .options-form .option [class^=fui]:hover {
   opacity: 1;
@@ -132,7 +135,11 @@ textarea {
   content: none !important;
 }
 .options-form .disabled {
+  opacity: .65;
   pointer-events: none;
+}
+.options-form .disabled .rule-item-disabled > input[type="text"] {
+  opacity: 1;
 }
 .options-form .btn {
   margin-top: 10px;
@@ -170,13 +177,17 @@ textarea {
   margin-top: 5px;
 }
 .options-form .rule-item > .group {
-  width: 60px;
+  width: 57px;
 }
 .options-form .rule-item > .project {
-  width: 75px;
+  width: 72px;
 }
 .options-form .rule-item > .path {
-  width: 115px;
+  width: 112px;
+}
+.options-form .rule-item-disabled > input[type="text"] {
+  opacity: .65;
+  pointer-events: none;
 }
 .options-form .split-line {
   position: relative;

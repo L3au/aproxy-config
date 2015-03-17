@@ -7,38 +7,19 @@ var onmessage = function (event) {
             return new Promise(function (resolve, reject) {
                 var xhr = new XMLHttpRequest();
 
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState == 2) {
-                        var content = mapContents[url];
-                        var lastModified = xhr.getResponseHeader('last-modified');
-
-                        if (lastModified) {
-                            xhr.abort();
-
-                            if (content) {
-                                if (content !== lastModified) {
-                                    postMessage(url);
-                                    mapContents[url] = lastModified;
-                                }
-                            } else {
-                                mapContents[url] = lastModified;
-                            }
-
-                            resolve();
-                        }
-                    }
-                };
-
                 xhr.onload = function () {
                     var content = mapContents[url];
+                    var lastModified = xhr.getResponseHeader('last-modified');
 
-                    if (content) {
-                        if (content !== xhr.responseText) {
-                            postMessage(url);
-                            mapContents[url] = xhr.responseText;
+                    if (lastModified) {
+                        if (content) {
+                            if (content !== lastModified) {
+                                postMessage(url);
+                                self.close();
+                            }
+                        } else {
+                            mapContents[url] = lastModified;
                         }
-                    } else {
-                        mapContents[url] = xhr.responseText;
                     }
 
                     resolve();
@@ -49,7 +30,7 @@ var onmessage = function (event) {
                 };
 
                 xhr.timeout = 3000;
-                xhr.open('get', url, true);
+                xhr.open('HEAD', url, true);
                 xhr.send();
             });
         })).then(function () {
@@ -59,3 +40,5 @@ var onmessage = function (event) {
 
     init();
 };
+
+

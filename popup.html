@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Mew Proxy Options</title>
+    <title>Aproxy Config</title>
     <meta name="author" content="L3au">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/bootstrap.min.css">
@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/popup.css">
 </head>
 <body class="container">
-<h1>Mew Proxy</h1>
+<h1>Aproxy 配置</h1>
 <form class="options-form">
     <script id="template" type="template">
         <div class="option">
@@ -19,32 +19,17 @@
         </div>
 
         <div class="option">
-            <label class="option-label">目标位置</label>
-            <label class="radio {{= it.enabled ? '' : 'disabled'}}">
-                <input type="radio" class="proxy-target" name="target" value="local" data-toggle="radio" {{= it.target == 'local' ? 'checked' : ''}} {{= it.enabled ? '' : 'disabled'}}>本地
-            </label>
-            <label class="radio {{= it.enabled ? '' : 'disabled'}}">
-                <input type="radio" class="proxy-target" name="target" value="remote" data-toggle="radio" {{= it.target == 'remote' ? 'checked' : ''}} {{= it.enabled ? '' : 'disabled'}}>Gitlab<small class="intranet-tip">(仅限内网)</small>
-            </label>
+            <label class="option-label">代理规则</label>
 
-            <div class="proxy-rules proxy-local-rules {{= it.target == 'local' ? '' : 'hidden'}} {{= it.enabled ? '' : 'disabled'}}">
-                {{ it.localRules.forEach(function(rule, index) { }}
-                <div class="rule-item">
-                    <input type="text" name="localRules[][group]" value="{{= rule.group || '' }}" placeholder="仓库组" class="form-control group">
-                    <input type="text" name="localRules[][project]" value="{{= rule.project || '' }}" placeholder="项目名称" class="form-control project">
-                    <input type="text" name="localRules[][path]" value="{{= rule.path || '' }}" placeholder="对应本地路径" class="form-control path">
-                    <span class="{{= (index == it.localRules.length - 1) ? 'fui-plus' : 'fui-cross'}}" data-type="local" data-index="{{= index }}"></span>
-                </div>
-                {{ }); }}
-            </div>
-
-            <div class="proxy-rules proxy-remote-rules {{= it.target == 'remote' ? '' : 'hidden'}} {{= it.enabled ? '' : 'disabled'}}">
-                {{ it.remoteRules.forEach(function(rule, index) { }}
-                <div class="rule-item">
-                    <input type="text" name="remoteRules[][group]" value="{{= rule.group || '' }}" placeholder="仓库组" class="form-control group">
-                    <input type="text" name="remoteRules[][project]" value="{{= rule.project || '' }}" placeholder="项目名称" class="form-control project">
-                    <input type="text" name="remoteRules[][directory]" value="{{= rule.directory || '' }}" placeholder="源码目录(如:src)" class="form-control path">
-                    <span class="{{= (index == it.remoteRules.length - 1) ? 'fui-plus' : 'fui-cross'}}" data-type="remote" data-index="{{= index }}"></span>
+            <div class="proxy-rules {{= it.enabled ? '' : 'disabled'}}">
+                {{ it.proxyRules.forEach(function(rule, index) { }}
+                <div class="rule-item {{= rule.disabled ? 'rule-item-disabled' : '' }}">
+                    <input type="text" name="proxyRules[][group]" value="{{= rule.group || '' }}" placeholder="仓库组" class="form-control group">
+                    <input type="text" name="proxyRules[][project]" value="{{= rule.project || '' }}" placeholder="项目名称" class="form-control project">
+                    <input type="text" name="proxyRules[][path]" value="{{= rule.path || '' }}" placeholder="本地src路径" class="form-control path">
+                    <input class="hidden" type="text" name="proxyRules[][disabled]" value="{{= rule.disabled ? 'true' : 'false'}}">
+                    <label class="fui-eye" data-index="{{= index }}"></label>
+                    <span class="{{= (index == it.proxyRules.length - 1) ? 'fui-plus' : 'fui-cross'}}" data-type="proxy" data-index="{{= index }}"></span>
                 </div>
                 {{ }); }}
             </div>
@@ -55,7 +40,7 @@
         <div class="option">
             <label class="option-label">禁用缓存</label>
             <input type="checkbox" name="disabledCache" data-toggle="switch" {{= it.disabledCache ? 'checked' : ''}} value="true">
-            <small>（建议只在开发时启用）</small>
+            <small>（全局，建议只在开发时启用）</small>
         </div>
 
         <div class="option">

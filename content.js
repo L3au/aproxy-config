@@ -1,18 +1,12 @@
 (function () {
     var rootEl = document.documentElement;
 
-    function $(v, c) {
-        return (c || document).querySelector(v);
-    }
-
     function $$(v, c) {
-        return (c || document).querySelectorAll(v);
+        return [].slice.call((c || document).querySelectorAll(v));
     }
 
     function getScripts() {
         var scripts = $$('script[src]');
-
-        scripts = [].slice.call(scripts);
 
         return scripts.map(function (script) {
             return script.src
@@ -21,8 +15,6 @@
 
     function getStyleLinks() {
         var links = $$('link[href][rel="stylesheet"]');
-
-        links = [].slice.call(links);
 
         return links.map(function (link) {
             return link.href;
@@ -41,40 +33,40 @@
         assets = assets.concat(getScripts()).concat(getStyleLinks());
 
         chrome.runtime.sendMessage({
-            action: 'collectAssets',
+            action: 'watch',
             assets: assets
         });
-    }
-
-    if (document.readyState == 'complete') {
-        onLoaded();
-    } else {
-        window.onload = onLoaded;
     }
 
     chrome.runtime.onMessage.addListener(function (request) {
         var action = request.action;
         var url = request.url;
-        var isCSS = /\.css(?:\?|$)/i.exec(url);
+        var isCSS = request.isCSS;
+
+        if (action == 'collect') {
+            if (document.readyState == 'complete') {
+                onLoaded();
+            } else {
+                window.onload = onLoaded;
+            }
+        }
 
         if (action == 'refresh') {
-            if (isCSS) {
-                var links = $$('link[href][rel="stylesheet"]');
-
-                links = [].slice.call(links);
-
-                links.forEach(function (link) {
-                    link.href = link.href;
-                });
-
-                rootEl.classList.add('mew-proxy-refresh');
-
-                setTimeout(function () {
-                    rootEl.classList.remove('mew-proxy-refresh');
-                });
-            } else {
-                location.reload()
-            }
+            location.reload();
+            //if (isCSS) {
+            //    var newLink;
+            //    var links = $$('link[href][rel="stylesheet"]');
+            //
+            //    links.some(function (link) {
+            //        if (link.href == url) {
+            //            newLink = link;
+            //        }
+            //    });
+            //
+            //    newLink.href = url;
+            //
+            //    rootEl.style.opacity = 0.9999 + Math.random();
+            //}
         }
     });
 }).call();

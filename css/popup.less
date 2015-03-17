@@ -25,7 +25,8 @@
 
 html {
     opacity: 0;
-    transition: transform .3s ease-out, opacity .1s linear;
+    transition: opacity .2s ease;
+    will-change: opacity;
 }
 
 .popup-show {
@@ -136,12 +137,14 @@ textarea {
         [class^=fui] {
             display: inline-block;
             width: 20px;
+            margin-bottom: 0;
             font-size: 16px;
             cursor: pointer;
             text-align: center;
             vertical-align: middle;
             opacity: 0.6;
             transition: .25s;
+            line-height: normal;
 
             &:hover {
                 opacity: 1;
@@ -170,7 +173,12 @@ textarea {
     }
 
     .disabled {
+        opacity: .65;
         pointer-events: none;
+
+        .rule-item-disabled > input[type="text"] {
+            opacity: 1;
+        }
     }
 
     .btn {
@@ -216,15 +224,22 @@ textarea {
         }
 
         > .group {
-            width: 60px;
+            width: 57px;
         }
 
         > .project {
-            width: 75px;
+            width: 72px;
         }
 
         > .path {
-            width: 115px;
+            width: 112px;
+        }
+    }
+
+    .rule-item-disabled {
+        > input[type="text"] {
+            opacity: .65;
+            pointer-events: none;
         }
     }
 

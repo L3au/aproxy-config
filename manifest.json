@@ -1,15 +1,22 @@
 {
     "manifest_version": 2,
-    "name": "Mew Proxy",
-    "version": "1.0.0",
+    "name": "Aroxy Config",
+    "version": "1.1.0",
     "author": "L3au",
-    "description": "A simple static assets proxy",
+    "description": "Aproxy 配置扩展",
     "minimum_chrome_version": "31.0.1650.8",
-    "permissions": ["tabs", "<all_urls>", "webRequest", "webRequestBlocking", "storage", "browsingData"],
+    "permissions": ["tabs", "<all_urls>", "webRequest", "webRequestBlocking", "storage", "browsingData", "proxy"],
     "content_security_policy": "script-src 'unsafe-eval'; object-src 'self'",
     "background": {
-        "page": "background.html"
+        "scripts": ["background.js"]
     },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["content.js"],
+            "run_at": "document_start"
+        }
+    ],
     "web_accessible_resources": [
         "js/*",
         "css/*",
@@ -18,19 +25,12 @@
     ],
     "browser_action": {
         "default_icon": "icon/icon_128.png",
-        "default_title": "Mew Proxy",
+        "default_title": "Aroxy Config",
         "default_popup": "popup.html"
     },
     "icons": {
         "16": "icon/icon_16.png",
         "48": "icon/icon_48.png",
         "128": "icon/icon_128.png"
-    },
-    "plugins": [{
-        "path": "plugin/npFileManager.dll",
-        "public": false
-    }, {
-        "path": "plugin/npFileManager.plugin",
-        "public": false
-    }]
+    }
 }

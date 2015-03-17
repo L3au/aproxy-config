@@ -1,8 +1,12 @@
-(function () {
+//(function () {
     var options, timer;
     var form = $('form');
     var template = tplEngine($('#template').html());
     var background = chrome.extension.getBackgroundPage();
+
+    function getOptions() {
+        return form.serializeJSON();
+    }
 
     $.extend($.serializeJSON.defaultOptions, {
         parseAll: true,
@@ -13,8 +17,16 @@
         }
     });
 
-    chrome.storage.sync.get(function (data) {
+    background.getOptions(true).then(function (data) {
         options = $.extend(true, {}, data);
+
+        if (options.proxyRules.length == 0) {
+            options.proxyRules.push({});
+        }
+
+        if (options.refreshList.length == 0) {
+            options.refreshList.push('');
+        }
 
         updateView();
 
@@ -29,7 +41,7 @@
 
                 options = getOptions();
 
-                if (filterOptions(options)) {
+                if (!filterOptions()) {
                     return;
                 }
 
@@ -53,12 +65,22 @@
             }
         },
 
-        // change proxy target
-        '.proxy-target': {
-            'change.radiocheck': function (e) {
+        // enable/disable rule item
+        '.fui-eye': {
+            click: function (e) {
+                var target = $(e.currentTarget);
+                var item = target.parent();
+                var isDisabled = !item.hasClass('rule-item-disabled');
+                var index = parseInt(target.attr('data-index'), 10);
+
                 options = getOptions();
 
-                updateView();
+                var rules = options.proxyRules;
+
+                rules[index].disabled = isDisabled;
+
+                item.find('.hidden').val(isDisabled);
+                item.toggleClass('rule-item-disabled');
             }
         },
 
@@ -70,16 +92,12 @@
 
                 options = getOptions();
 
-                var localRules = options.localRules;
-                var remoteRules = options.remoteRules;
+                var proxyRules = options.proxyRules;
                 var refreshList = options.refreshList;
 
                 switch (type) {
-                    case 'local':
-                        localRules.push({});
-                        break;
-                    case 'remote':
-                        remoteRules.push({});
+                    case 'proxy':
+                        proxyRules.push({});
                         break;
                     case 'refresh':
                         refreshList.push('');
@@ -101,16 +119,12 @@
 
                 options = getOptions();
 
-                var localRules = options.localRules;
-                var remoteRules = options.remoteRules;
+                var proxyRules = options.proxyRules;
                 var refreshList = options.refreshList;
 
                 switch (type) {
-                    case 'local':
-                        localRules.splice(index, 1);
-                        break;
-                    case 'remote':
-                        remoteRules.splice(index, 1);
+                    case 'proxy':
+                        proxyRules.splice(index, 1);
                         break;
                     case 'refresh':
                         refreshList.splice(index, 1);
@@ -144,65 +158,34 @@
         });
     });
 
-    function getOptions() {
-        var json = form.serializeJSON();
-
-        json.target = $('.proxy-target:checked').val();
-
-        return json;
-    }
-
-    function filterOptions(options) {
+    function filterOptions() {
         var refreshList = options.refreshList;
 
-        if (refreshList.length !== 1) {
-            refreshList = refreshList.filter(function (item) {
-                return !!item;
-            });
-
-            if (refreshList.length <= 1) {
-                refreshList.push('');
-            }
-        }
+        refreshList = refreshList.filter(function (item) {
+            return !!item.trim();
+        });
 
         options.refreshList = refreshList;
 
-        if (!options.enabled) {
-            return;
-        }
-
-        if (options.target == 'local') {
-            return filterRules(options.localRules, 'local');
-        }
-
-        if (options.target == 'remote') {
-            return filterRules(options.remoteRules, 'remote');
-        }
-    }
-
-    function filterRules(rules, type) {
         var isRejected;
+        var proxyRules = options.proxyRules;
         var filterRules = [];
 
-        for (var i = 0; i < rules.length; i++) {
+        for (var i = 0; i < proxyRules.length; i++) {
             var isValid = true;
-            var rule = rules[i];
+            var rule = proxyRules[i];
 
-            var ruleArray = [rule.group, rule.project];
-            
-            if (type == 'local') {
-                ruleArray.push(rule.path);
-            } else {
-                ruleArray.push(rule.project);
-            }
+            rule.group = rule.group.trim();
+            rule.project = rule.project.trim();
+            rule.path = rule.path.trim();
 
-            if (ruleArray == ',,') {
+            var ruleArray = [rule.group, rule.project, rule.path];
+
+            if (ruleArray.join() == ',,') {
                 continue;
             }
 
-            var el = type == 'local' ? '.proxy-local-rules' : '.proxy-remote-rules';
-
-            var group = $('.rule-item:eq(' + i + ') .group', el);
+            var group = $('.rule-item:eq(' + i + ') .group');
 
             if (rule.group == '') {
                 group.addClass('form-control-error');
@@ -211,7 +194,7 @@
                 group.removeClass('form-control-error');
             }
 
-            var project = $('.rule-item:eq(' + i + ') .project', el);
+            var project = $('.rule-item:eq(' + i + ') .project');
 
             if (rule.project == '') {
                 project.addClass('form-control-error');
@@ -220,24 +203,13 @@
                 project.removeClass('form-control-error');
             }
 
-            if (type == 'local') {
-                var path = $('.rule-item:eq(' + i + ') .path', el);
+            var path = $('.rule-item:eq(' + i + ') .path');
 
-                if (!background.isValidPath(rule.path)) {
-                    path.addClass('form-control-error');
-                    isValid = false;
-                } else {
-                    path.removeClass('form-control-error');
-                }
+            if (rule.path == '') {
+                path.addClass('form-control-error');
+                isValid = false;
             } else {
-                var directory = $('.rule-item:eq(' + i + ') .directory', el);
-
-                if (rule.directory == '') {
-                    directory.addClass('form-control-error');
-                    isValid = false;
-                } else {
-                    directory.removeClass('form-control-error');
-                }
+                path.removeClass('form-control-error');
             }
 
             filterRules.push(rule);
@@ -247,11 +219,9 @@
             }
         }
 
-        filterRules.push({});
+        options.proxyRules = filterRules;
 
-        options[type + 'Rules'] = filterRules;
-
-        return isRejected;
+        return !isRejected;
     }
 
     function updateView() {
@@ -279,4 +249,4 @@
             }
         }
     }
-}).call();
+//}).call();
