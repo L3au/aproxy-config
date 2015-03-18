@@ -1,27 +1,27 @@
-Mew Proxy
+AProxy Config
 ===
-[Aproxy](http://work.cainiao-inc.cn/issues/1440)的配置工具]
+[Aproxy](http://work.cainiao-inc.cn/issues/1440)的配置的Chrome扩展]
 
 安装
 ---
+[Chrome Webstore](https://chrome.google.com/webstore/detail/aroxy-config/njconeaigoafkdkcoaioddgmcioocabh) 或者 [下载](https://github.com/L3au/aproxy-config/tree/master/crx)
 
 配置
 ---
-设置代理规则后即可使用
+启动本地Aproxy后设置代理规则后即可使用
 
-<p><img src="http://gtms01.alicdn.com/tps/i1/TB1mdibHXXXXXbvXFXXGXLCGpXX-700-738.png" width="380"></p>
+<p><img src="http://gtms03.alicdn.com/tps/i3/TB1jiPUHXXXXXaIapXXwtLH7pXX-654-874.png" width="380"></p>
 
 特性
 ---
 - 随时启用禁用设置
-- 代理静态资源到本地或者gitlab
+- 只会转发对配置规则中的请求
 - 支持跨目录、跨项目、跨项目组的combo
 - 代理资源不会缓存，也可以设置全局禁用
-- 自动刷新页面(CSS修改时只重新载入新的CSS)
+- 开启自动刷新，改完代码demo页面自动刷新
 
 TO DO
 ---
-- 代理到指定电脑(局域网内)
-- 精确的代理规则设置
-- 自动刷新使用请求头判断
-- 提供Firefox版本
+- 自定义本地端口
+- 代理指定域名，类似hosts功能
+- 配合aproxy实现本地https服务
