@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Aroxy Config",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "author": "L3au",
     "description": "Aproxy 配置扩展",
     "minimum_chrome_version": "31.0.1650.8",
