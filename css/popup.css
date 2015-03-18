@@ -19,7 +19,7 @@ html {
 .container {
   position: relative;
   width: 320px;
-  min-height: 323px;
+  min-height: 400px;
   box-sizing: border-box;
 }
 h1 {
