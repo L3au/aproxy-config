@@ -5,23 +5,18 @@
     <title>Aproxy Config</title>
     <meta name="author" content="L3au">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/flat-ui-min.css">
     <link rel="stylesheet" href="css/popup.css">
 </head>
 <body class="container">
 <h1>Aproxy 配置</h1>
+
 <form class="options-form">
     <script id="template" type="template">
         <div class="option">
-            <label class="option-label">代理启用</label>
-            <input type="checkbox" class="proxy-enabled" name="enabled" data-toggle="switch" {{= it.enabled ? 'checked' : ''}} value="true">
-        </div>
-
-        <div class="option">
             <label class="option-label">代理规则</label>
-
-            <div class="proxy-rules {{= it.enabled ? '' : 'disabled'}}">
+            <input type="text" class="focus">
+            <div class="proxy-rules">
                 {{ it.proxyRules.forEach(function(rule, index) { }}
                 <div class="rule-item {{= rule.disabled ? 'rule-item-disabled' : '' }}">
                     <input type="text" name="proxyRules[][group]" value="{{= rule.group || '' }}" placeholder="仓库组" class="form-control group">
@@ -37,11 +32,11 @@
 
         <div class="split-line"></div>
 
-        <div class="option">
+        <!--<div class="option">
             <label class="option-label">禁用缓存</label>
             <input type="checkbox" name="disabledCache" data-toggle="switch" {{= it.disabledCache ? 'checked' : ''}} value="true">
             <small>（全局，建议只在开发时启用）</small>
-        </div>
+        </div>-->
 
         <div class="option">
             <label class="option-label">自动刷新</label>
@@ -63,7 +58,7 @@
             </div>
         </div>
 
-        <button type="submit" class="btn btn-sm btn-block btn-primary">Save</button>
+        <button type="submit" class="btn btn-sm btn-block btn-primary">保存</button>
     </script>
 </form>
 <script src="./js/jquery.min.js"></script>

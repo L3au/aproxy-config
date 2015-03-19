@@ -1,3 +1,7 @@
+.focus {
+  position: absolute;
+  opacity: 0;
+}
 @-webkit-keyframes previewer {
   from {
     -webkit-transform: scale(0.5);
@@ -19,7 +23,7 @@ html {
 .container {
   position: relative;
   width: 320px;
-  min-height: 322px;
+  min-height: 244px;
   box-sizing: border-box;
 }
 h1 {
@@ -146,6 +150,7 @@ textarea {
   margin-bottom: 15px;
   padding: 8px;
   font-size: 15px;
+  letter-spacing: 2px;
 }
 .options-form .bootstrap-switch-on:hover + small {
   opacity: 1;
@@ -188,6 +193,9 @@ textarea {
 .options-form .rule-item-disabled > input[type="text"] {
   opacity: .65;
   pointer-events: none;
+}
+.options-form .rule-item-disabled > .fui-eye {
+  opacity: .2;
 }
 .options-form .split-line {
   position: relative;

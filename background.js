@@ -1,22 +1,13 @@
-var ConfigPort = 'http://127.0.0.1:9999/';
-
-chrome.proxy.onProxyError.addListener(function (details) {
-    console.error(details);
-    chrome.proxy.settings.clear();
-});
-
-function isEmpty(o) {
-    return Object.keys(o).length == 0;
-}
+var ConfigPort = 'http://127.0.0.1:9999';
 
 function getOptions(request) {
-    if (!request) {
-        return JSON.parse(localStorage.options);
-    }
-
     var options = JSON.parse(localStorage.options);
 
-    return new Promise(function (resolve, reject) {
+    if (!request) {
+        return options;
+    }
+
+    return new Promise(function (resolve) {
         getRules().then(function (rules) {
             options.proxyRules = rules;
             resolve(options);
@@ -25,172 +16,109 @@ function getOptions(request) {
 }
 
 function setOptions(options) {
-    chrome.storage.local.set(options);
     localStorage.options = JSON.stringify(options);
 
-    setIcon(options);
-
     var rules = options.proxyRules;
-
-    rules = rules.filter(function (rule) {
-        return rule.group && rule.project && rule.path;
-    });
-
-    rules = rules.map(function (rule) {
-        return {
-            name: rule.project,
-            from: '/' + rule.group + '/' + rule.project + '/*',
-            to: rule.path,
-            disabled: rule.disabled
-        }
-    });
-
-    var api = ConfigPort + 'rule/save';
+    var api = ConfigPort + '/rule';
     var xhr = new XMLHttpRequest();
 
-    api += '?rules=' + encodeURIComponent(JSON.stringify(rules));
-    api += '&t=' + Date.now();
+    rules = encodeURIComponent(JSON.stringify(rules));
 
     xhr.onload = function () {
-        // reset proxy setting
-        setProxy(options);
+        var json = JSON.parse(xhr.responseText);
 
-        chrome.tabs.reload({
-            bypassCache: true
+        if (json.success) {
+            setProxy(true);
+        }
+    };
+
+    xhr.onerror = function () {
+        chrome.notifications.create({
+            type: 'basic',
+            title: '额...',
+            message: '保存规则出了点问题，可能aproxy没启动',
+            iconUrl: 'icon/icon_128.png',
+            appIconMaskUrl: 'icon/icon_128.png',
+            contextMessage: 'Aproxy Config'
+        }, function () {
+            clearProxy();
         });
     };
 
-    xhr.open('GET', api);
-    xhr.send();
+    xhr.open('POST', api);
+    xhr.send('rules=' + rules);
 }
 
 function getRules() {
-    function showTip () {
-        var note = new Notification('额...', {
-            body: 'Aproxy没有启动或者没使用默认端口',
-            icon: chrome.runtime.getURL('icon/icon_128.png')
-        });
-
-        note.onclick = function () {
-            note.close();
-        };
-
-        setTimeout(function () {
-            note.close();
-        }, 7000);
-    }
-
-    return new Promise(function (resolve, reject) {
-        var api = ConfigPort + 'rule/load';
-
+    return new Promise(function (resolve) {
+        var api = ConfigPort + '/rule';
         var xhr = new XMLHttpRequest();
 
         xhr.onload = function () {
-            var result = JSON.parse(xhr.responseText);
-            var rules = result.rules || [];
+            var rules = JSON.parse(xhr.responseText);
+            var options = getOptions();
 
-            rules = rules.map(function (rule) {
-                var to = rule.to;
-                var from = rule.from;
-                var disabled = rule.disabled;
+            options.proxyRules = rules;
 
-                var match = from.match(/([\w-]+)/g);
+            localStorage.options = JSON.stringify(options);
 
-                if (match && match.length >= 2) {
-                    return {
-                        disabled: disabled,
-                        group: match[0],
-                        project: match[1],
-                        path: to
-                    }
-                }
-
-                return {};
-            });
-
+            setProxy();
             resolve(rules);
         };
 
         xhr.onerror = function () {
-            if (Notification.permission === "granted") {
-                showTip();
-            } else if (Notification.permission !== 'denied') {
-                Notification.requestPermission(function (permission) {
-                    if (permission === "granted") {
-                        showTip();
-                    }
-                });
-            }
-
-            var options = JSON.parse(localStorage.options || '{}');
-
-            resolve(options.proxyRules || []);
+            chrome.notifications.create({
+                type: 'basic',
+                title: '额...',
+                message: 'aproxy没启动或使用的不是默认端口',
+                iconUrl: 'icon/icon_128.png',
+                appIconMaskUrl: 'icon/icon_128.png',
+                contextMessage: 'Aproxy Config'
+            }, function () {
+                clearProxy();
+            });
         };
 
-        xhr.open('GET', api, true);
+        xhr.open('GET', api);
         xhr.send();
     });
 }
 
-function setIcon(options) {
-    if (options.enabled || options.disabledCache || options.autoRefresh) {
-        chrome.browserAction.setIcon({
-            path: {
-                "19": "icon/icon_48.png",
-                "38": "icon/icon_128.png"
-            }
-        });
-
-        var badgeText = '';
-
-        if (options.enabled) {
-            badgeText += 'P';
+function clearProxy() {
+    chrome.proxy.settings.clear({
+        scope: 'regular'
+    });
+    chrome.browserAction.setIcon({
+        path: {
+            "19": "icon/icon_disabled.png",
+            "38": "icon/icon_disabled.png"
         }
-
-        if (options.disabledCache) {
-            badgeText += 'C';
-        }
-
-        if (options.autoRefresh) {
-            badgeText += 'R';
-        }
-
-        chrome.browserAction.setBadgeText({text: badgeText});
-        chrome.browserAction.setBadgeBackgroundColor({color: '#fd5e2d'});
-    } else {
-        chrome.browserAction.setIcon({
-            path: {
-                "19": "icon/icon_disabled.png",
-                "38": "icon/icon_disabled.png"
-            }
-        });
-
-        chrome.browserAction.setBadgeText({text: ''});
-        chrome.browserAction.setBadgeBackgroundColor({color: [0, 0, 0, 0]})
-    }
+    });
 }
 
-function setProxy(options) {
+function FindProxyForURL(url, host) {
+    var isMatched;
+    var proxy = 'DIRECT';
+    var path = url.slice(url.indexOf(host) + host.length);
+
+    path = path.replace('??', '');
+
+    for (var i = 0; i < rules.length; i++) {
+        var regex = rules[i];
+
+        if (regex.test(path)) {
+            proxy = 'PROXY 127.0.0.1:9998';
+            break;
+        }
+    }
+
+    return proxy;
+}
+
+function setProxy() {
+    var options = getOptions();
     var rules = options.proxyRules;
-
-    var pacRule = (function () {/*
-         function FindProxyForURL(url, host) {
-             var isMatched;
-             var path = url.slice(url.indexOf(host) + host.length);
-
-             path = path.replace('??', '');
-
-             for (var i = 0; i < rules.length; i++) {
-                var regex = rules[i];
-
-                 if (regex.test(path)) {
-                    return 'PROXY 127.0.0.1:9998';
-                 }
-             }
-
-             return 'DIRECT';
-         }
-     */}).toString().slice(15, -5);
+    var pacRule = FindProxyForURL.toString();
 
     rules = rules.filter(function (rule) {
         return !rule.disabled;
@@ -208,176 +136,155 @@ function setProxy(options) {
 
     pacRule = 'var rules= [' + rules.toString() + '];\n' + pacRule;
 
-    if (options.enabled) {
-        chrome.proxy.settings.set({
-            value: {
-                mode: 'pac_script',
-                pacScript: {
-                    data: pacRule
-                }
-            }, scope: 'regular'
-        });
-    } else {
-        chrome.proxy.settings.clear({
-            scope: 'regular'
-        });
+    chrome.proxy.settings.set({
+        value: {
+            mode: 'pac_script',
+            pacScript: {
+                data: pacRule
+            }
+        }, scope: 'regular'
+    });
+
+    chrome.browserAction.setIcon({
+        path: {
+            "19": "icon/icon_48.png",
+            "38": "icon/icon_128.png"
+        }
+    });
+}
+
+var cacheWorkers = {};
+
+if (!localStorage.options) {
+    localStorage.options = JSON.stringify({
+        autoRefresh: false,
+        refreshList: []
+    });
+}
+
+function clearWorker(tabId) {
+    var worker = cacheWorkers[tabId];
+
+    if (worker) {
+        worker.terminate();
+        worker = null;
+        delete cacheWorkers[tabId];
     }
 }
 
-var app = (function () {
-    function Background() {
-        this.initialize();
+function clearAllWorkers() {
+    for (var tabId in cacheWorkers) {
+        clearWorker(tabId);
     }
+}
 
-    Background.prototype = {
-        constructor: Background,
+function statusWatcher() {
+    var xhr = new XMLHttpRequest();
 
-        cacheWorkers: {},
+    xhr.open('HEAD', ConfigPort);
 
-        initialize: function () {
-            this.initOptions();
-            this.bindEvents();
-        },
-
-        initOptions: function () {
-            getRules().then(function (rules) {
-                chrome.storage.local.get(function (options) {
-                    if (options.localRules || options.target) {
-                        chrome.storage.local.clear();
-                    }
-                    
-                    if (isEmpty(options)) {
-                        options = {
-                            enabled: false,
-                            autoRefresh: false,
-                            refreshList: [],
-                            disabledCache: false
-                        };
-                    }
-
-                    options.proxyRules = rules;
-
-                    chrome.storage.local.set(options);
-                    localStorage.options = JSON.stringify(options);
-
-                    setProxy(options);
-                    setIcon(options);
-                });
-            });
-        },
-
-        bindEvents: function () {
-            var self = this;
-
-            var isClearing;
-
-            function clearCache() {
-                var options = getOptions();
-
-                if (options.disabledCache && !isClearing) {
-                    var oneWeekTime = 1000 * 60 * 60 * 24 * 7;
-                    var since = Date.now() - oneWeekTime;
-
-                    isClearing = true;
-
-                    chrome.browsingData.removeCache({
-                        since: since
-                    }, function () {
-                        isClearing = false;
-                    });
-                }
-            }
-
-            // clear browsing cache
-            chrome.webRequest.onBeforeRequest.addListener(function () {
-                clearCache();
-            }, {
-                urls: ['<all_urls>'],
-                types: ['main_frame']
-            });
-
-            // watch auto refresh
-            chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-                self.clearWorker(tabId);
-
-                if (changeInfo.status == 'complete') {
-                    var options = getOptions();
-                    var list = options.refreshList;
-
-                    if (options.autoRefresh && list != '') {
-                        var url = new URL(tab.url);
-
-                        var isMatched = list.some(function (rUrl) {
-                            rUrl = new URL(rUrl);
-
-                            if (rUrl.origin == url.origin && rUrl.pathname == url.pathname) {
-                                return true;
-                            }
-                        });
-
-                        if (isMatched) {
-                            chrome.tabs.sendMessage(tabId, {
-                                action: 'collect'
-                            });
-                        }
-                    } else {
-                        self.clearAllWorkers();
-                    }
-                }
-            });
-
-            chrome.tabs.onRemoved.addListener(function (tabId, removeInfo) {
-                self.clearWorker(tabId);
-            });
-
-            chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-                var action = request.action;
-                var tabId = sender.tab.id;
-                var workers = self.cacheWorkers;
-                var assets = request.assets;
-
-                if (action == 'watch') {
-                    var worker = new Worker('worker.js');
-
-                    workers[tabId] = worker;
-
-                    worker.onmessage = function (event) {
-                        var url = event.data;
-                        var isCSS = /\.css(?:[\?#]|$)/i.test(url);
-
-                        self.clearWorker(tabId);
-
-                        chrome.tabs.sendMessage(tabId, {
-                            url: url,
-                            isCSS: isCSS,
-                            action: 'refresh'
-                        });
-                    };
-
-                    worker.postMessage(assets);
-                }
-            });
-        },
-
-        clearWorker: function (tabId) {
-            var workers = this.cacheWorkers;
-            var worker = workers[tabId];
-
-            if (worker) {
-                worker.terminate();
-                worker = null;
-                delete workers[tabId];
-            }
-        },
-
-        clearAllWorkers: function () {
-            var workers = this.cacheWorkers;
-
-            for (var tabId in workers) {
-                this.clearWorker(tabId);
-            }
-        }
+    xhr.onload = function () {
+        setProxy();
+    };
+    xhr.onerror = function () {
+        clearProxy();
     };
 
-    return new Background;
-}).call();
+    xhr.send();
+}
+
+chrome.proxy.onProxyError.addListener(function (details) {
+    console.error(details);
+    clearProxy();
+});
+
+chrome.tabs.onActivated.addListener(statusWatcher);
+chrome.webRequest.onBeforeRequest.addListener(statusWatcher, {
+    urls: ['<all_urls>'],
+    types: ['main_frame']
+});
+
+// watch auto refresh
+chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
+    self.clearWorker(tabId);
+
+    if (changeInfo.status == 'complete') {
+        var options = getOptions();
+        var list = options.refreshList;
+
+        if (options.autoRefresh && list != '') {
+            var url = new URL(tab.url);
+
+            var isMatched = list.some(function (rUrl) {
+                rUrl = new URL(rUrl);
+
+                if (rUrl.origin == url.origin && rUrl.pathname == url.pathname) {
+                    return true;
+                }
+            });
+
+            if (isMatched) {
+                chrome.tabs.sendMessage(tabId, {
+                    action: 'collect'
+                });
+            }
+        } else {
+            clearAllWorkers();
+        }
+    }
+});
+
+chrome.tabs.onRemoved.addListener(function (tabId, removeInfo) {
+    clearWorker(tabId);
+});
+
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+    var action = request.action;
+    var tabId = sender.tab.id;
+    var assets = request.assets;
+
+    if (action == 'watch') {
+        var worker = new Worker('worker.js');
+
+        cacheWorkers[tabId] = worker;
+
+        worker.onmessage = function (event) {
+            var url = event.data;
+            var isCSS = /\.css(?:[\?#]|$)/i.test(url);
+
+            clearWorker(tabId);
+
+            chrome.tabs.sendMessage(tabId, {
+                url: url,
+                isCSS: isCSS,
+                action: 'refresh'
+            });
+        };
+
+        worker.postMessage(assets);
+    }
+});
+
+
+//chrome.webRequest.onHeadersReceived.addListener(function (request) {
+//    var headers = request.responseHeaders;
+//
+//    headers.some(function (header, index) {
+//        if (header.name.toLowerCase() == 'content-type') {
+//            headers.splice(index, 1);
+//            return true;
+//        }
+//    });
+//
+//    headers.push({
+//        name: 'content-security-policy',
+//        value: "default-src *; script-src 'unsafe-inline' 'unsafe-eval' g.tbcdn.cn; style-src 'unsafe-inline'"
+//    });
+//
+//    return {
+//        responseHeaders: headers
+//    };
+//}, {
+//    urls: ['*://127.0.0.1/*'],
+//    types: ['main_frame']
+//}, ['blocking', 'responseHeaders']);

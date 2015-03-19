@@ -1,4 +1,4 @@
-//(function () {
+(function () {
     var options, timer;
     var form = $('form');
     var template = tplEngine($('#template').html());
@@ -32,6 +32,7 @@
 
         $('html').addClass('popup-show');
     });
+
 
     var EVENTS = {
         // form submit
@@ -249,4 +250,4 @@
             }
         }
     }
-//}).call();
+}).call();

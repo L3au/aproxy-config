@@ -12,6 +12,11 @@
     opacity: 1;
 }
 
+.focus {
+    position: absolute;
+    opacity: 0;
+}
+
 @-webkit-keyframes previewer {
     from {
         -webkit-transform: scale(.5);
@@ -36,7 +41,7 @@ html {
 .container {
     position: relative;
     width: 320px;
-    min-height: 322px;
+    min-height: 244px;
     box-sizing: border-box;
 }
 
@@ -186,6 +191,7 @@ textarea {
         margin-bottom: 15px;
         padding: 8px;
         font-size: 15px;
+        letter-spacing: 2px;
     }
 
     .bootstrap-switch-on:hover + small {
@@ -240,6 +246,10 @@ textarea {
         > input[type="text"] {
             opacity: .65;
             pointer-events: none;
+        }
+
+        > .fui-eye {
+            opacity: .2;
         }
     }
 
